@@ -7,19 +7,24 @@ LABEL maintainer="github@sytone.com" \
       org.opencontainers.image.description="Hosted Obsidian instance allowing access via web browser"
 
 # Set version label
-ARG OBSIDIAN_VERSION=1.7.7
+ARG OBSIDIAN_VERSION=1.8.10
 
 # Update and install extra packages
 RUN echo "**** install packages ****" && \
     apt-get update && \
-    apt-get install -y --no-install-recommends curl libgtk-3-0 libnotify4 libatspi2.0-0 libsecret-1-0 libnss3 desktop-file-utils fonts-noto-color-emoji git ssh-askpass && \
-    apt-get autoclean && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
+    apt-get install -y --no-install-recommends curl libnss3 zlib1g-dev dbus-x11 uuid-runtime \
+    libfuse2 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgtk-3-0 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
 
 # Download and install Obsidian
+ARG TARGETARCH
+ARG FLAG=${TARGETARCH#amd64}
 RUN echo "**** download obsidian ****" && \
-    curl --location --output obsidian.deb "https://github.com/obsidianmd/obsidian-releases/releases/download/v${OBSIDIAN_VERSION}/obsidian_${OBSIDIAN_VERSION}_amd64.deb" && \
-    dpkg -i obsidian.deb && \
-    rm obsidian.deb
+    curl -L -o ./obsidian.AppImage \
+        "https://github.com/obsidianmd/obsidian-releases/releases/download/v${OBSIDIAN_VERSION}/Obsidian-${OBSIDIAN_VERSION}${FLAG:+-arm64}.AppImage" && \
+    chmod +x ./obsidian.AppImage && \
+    ./obsidian.AppImage --appimage-extract && \
+    rm ./obsidian.AppImage
 
 # Environment variables
 ENV CUSTOM_PORT="8080" \
@@ -27,7 +32,7 @@ ENV CUSTOM_PORT="8080" \
     CUSTOM_USER="" \
     PASSWORD="" \
     SUBFOLDER="" \
-    TITLE="Obsidian v${OBSIDIAN_VERSION}" \
+    TITLE="Obsidian v$OBSIDIAN_VERSION" \
     FM_HOME="/vaults"
 
 # Add local files
